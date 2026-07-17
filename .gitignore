@@ -1,0 +1,5 @@
+# generated artifacts if the agent is dogfooded on this repo itself
+PORTFOLIO.md
+PORTFOLIO.pdf
+portfolio.tokens.json
+.claude/agents/portfolio.tokens.json
