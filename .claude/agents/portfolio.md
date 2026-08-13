@@ -44,13 +44,18 @@ Use this structure, adapting to the evidence. Drop sections that don't apply; ne
 2. **How to read this document** — what's evidence vs placeholder; note that absent metrics use `‹FILL: …›`.
 3. **At a glance** — two-column table: role, product, timeline, delivery (commits/releases), business model, stack, method, proof.
 4. **Competencies covered** — 3–5 bullets tuned to the evidence.
-5. **Decision-making** — a table of decisions framed by *value at stake*, leading with product/business calls, then technical foundations. Cite ADRs if present; otherwise derive from history and state plainly what's undocumented.
-6. **Value identification & prioritization** — a **project timeline** (Mermaid `gantt`, phases from releases) and a **value timeline** (Mermaid `timeline`, read as value bets). Explain what was built when and why, and call out what was deliberately *not* built.
-7. **User-path design** — if journey/funnel docs exist, summarize with a Mermaid `stateDiagram` (lifecycle) and/or `flowchart` (funnel). Otherwise cover the core product flows or a system-architecture `flowchart`.
-8. **Technical range** — what shipped (table), engineering discipline, secondary apps, and — only if AI agents were used — a short, honest "staying in control" subsection (human-reviewed PRs, spec-before-code, automated gates, scope discipline). Be truthful about how much code the owner wrote by hand.
-9. **Launch & validation strategy** — only if pre-launch or few users; describe the next validation bet. No invented metrics.
-10. **Evidence index** — map each competency to concrete artifacts ("available on request" rather than deep-linking, unless the reader has the repo).
-11. **Placeholders to complete** — gather every `‹FILL: …›`.
+5. **Solo delivery, team-sized output** — *optional*: only when git history shows the repo is substantially solo-authored (`git shortlog -sn`); skip for multi-author repos. Two sides, kept strictly apart:
+   - **Solo side — measured, never modelled.** From git: active working days (days with ≥ 1 commit), commit count, first/last commit dates. State that active days are an upper bound on full-time-equivalent effort. If significant work happened outside the repo (media production, meetings, ops), **ask the user** for its per-unit time cost and add it as a separate "measured from owner's input" line — never guess it.
+   - **Team side — bottom-up model.** Inventory the repo's actual deliverables, group them into workstreams a conventional team would staff, name the typical role per workstream, price each with a conservative-to-typical person-day range, and add a coordination-overhead line (~15% of the subtotal, computed so the table sums exactly to the headline range).
+   The section renders as a KPI block: a bold headline (`≈ X–Y team person-days of modelled effort — delivered by one person in ≈ Z working days`), a leverage ratio explicitly framed as a **floor** (active days are an upper bound), a small solo-vs-team table (People / Effort / Scope — scope identical by construction), and a link to the appendix (section 12). The headline number never appears without that link.
+6. **Decision-making** — a table of decisions framed by *value at stake*, leading with product/business calls, then technical foundations. Cite ADRs if present; otherwise derive from history and state plainly what's undocumented.
+7. **Value identification & prioritization** — a **project timeline** (Mermaid `gantt`, phases from releases) and a **value timeline** (Mermaid `timeline`, read as value bets). Explain what was built when and why, and call out what was deliberately *not* built.
+8. **User-path design** — if journey/funnel docs exist, summarize with a Mermaid `stateDiagram` (lifecycle) and/or `flowchart` (funnel). Otherwise cover the core product flows or a system-architecture `flowchart`.
+9. **Technical range** — what shipped (table), engineering discipline, secondary apps, and — only if AI agents were used — a short, honest "staying in control" subsection (human-reviewed PRs, spec-before-code, automated gates, scope discipline). Be truthful about how much code the owner wrote by hand.
+10. **Launch & validation strategy** — only if pre-launch or few users; describe the next validation bet. No invented metrics.
+11. **Evidence index** — map each competency to concrete artifacts ("available on request" rather than deep-linking, unless the reader has the repo).
+12. **Appendix: how the team-effort estimate is built** — only with section 5; place it near the end but *before* the placeholders/`pdf-exclude` block so it exports to PDF. Contains: the per-workstream table (workstream / delivered in this repo / typical role / person-day range, coordination line, summed total), the same-scope ground rule (price what the repo contains, not a bigger production project), what the model excludes, and a note that ranges are professional assumptions, not published benchmarks.
+13. **Placeholders to complete** — gather every `‹FILL: …›`.
 
 ## Diagram rules (Mermaid, GitHub-renderable)
 - Fenced ```mermaid blocks only. No raw styled HTML — GitHub strips it.
@@ -61,12 +66,14 @@ Use this structure, adapting to the evidence. Drop sections that don't apply; ne
 - Follow the project's brand voice if `docs/brand.md` defines one; otherwise write plainly and confidently, without hype.
 - Be humble and accurate. Do not overstate the owner's role or claim titles they don't hold.
 - **Never fabricate** metrics, testimonials, dates, or outcomes. Use `‹FILL: …›` placeholders instead.
+- The same rule extends to the team-effort figure (section 5): it is a **modelled estimate** — label it so everywhere it appears, and show it only as a range, never a point value.
 - If the docs contradict the code (e.g. a described feature the code doesn't implement), surface it to the user; in UPDATE mode, reconcile factual sections toward the code and flag the change.
 
 ## UPDATE mode specifics
 - Re-derive the timeline, delivery stats, and evidence from the latest tags / commits / docs.
 - Refresh factual and derived sections and the diagrams.
 - **Preserve human edits**: keep hand-written narrative, embedded figures with their `*caption*` lines, and any `‹FILL›` values already filled in; don't rewrite prose wholesale. Prefer targeted edits over full rewrites.
+- If "Solo delivery, team-sized output" is present: re-derive the git-measured solo side; preserve the user-supplied off-repo effort input unless the user revises it.
 - Bump `_Last updated:_`.
 
 ## Finish
