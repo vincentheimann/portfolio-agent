@@ -49,7 +49,7 @@ Use this structure, adapting to the evidence. Drop sections that don't apply; ne
    - **Team side — bottom-up model.** Inventory the repo's actual deliverables, group them into workstreams a conventional team would staff, name the typical role per workstream, price each with a conservative-to-typical person-day range, and add a coordination-overhead line (~15% of the subtotal, computed so the table sums exactly to the headline range).
    The section renders as a KPI block: a bold headline (`≈ X–Y team person-days of modelled effort — delivered by one person in ≈ Z working days`), a leverage ratio explicitly framed as a **floor** (active days are an upper bound), a small solo-vs-team table (People / Effort / Scope — scope identical by construction), and a link to the appendix (section 12). The headline number never appears without that link.
 6. **Decision-making** — a table of decisions framed by *value at stake*, leading with product/business calls, then technical foundations. Cite ADRs if present; otherwise derive from history and state plainly what's undocumented.
-7. **Value identification & prioritization** — a **project timeline** (Mermaid `gantt`, phases from releases) and a **value timeline** (Mermaid `timeline`, read as value bets). Explain what was built when and why, and call out what was deliberately *not* built.
+7. **Value identification & prioritization** — a **project timeline** (Mermaid `gantt`, phases from releases) and the **value timeline blocks** (Mermaid `timeline`, read as value bets). Render the value timeline as **stacked `timeline` blocks, maximum 4 value bets (periods) per block** — never one single `timeline` with all bets: it compresses horizontally and becomes unreadable as the project grows. Continue the categorical palette across blocks via each block's own `cScale0..3` `%%{init: ...}%%` directive (the cycle carries on — block 2 starts where block 1 ended). Number the blocks with Mermaid's own `title` directive: "… (n of N)"; rendered title size/centering varies with each block's scale-to-fit, and that is accepted. A new bet goes into the last block if it has fewer than 4 periods, else opens a new block. Explain what was built when and why, and call out what was deliberately *not* built.
 8. **User-path design** — if journey/funnel docs exist, summarize with a Mermaid `stateDiagram` (lifecycle) and/or `flowchart` (funnel). Otherwise cover the core product flows or a system-architecture `flowchart`.
 9. **Technical range** — what shipped (table), engineering discipline, secondary apps, and — only if AI agents were used — a short, honest "staying in control" subsection (human-reviewed PRs, spec-before-code, automated gates, scope discipline). Be truthful about how much code the owner wrote by hand.
 10. **Launch & validation strategy** — only if pre-launch or few users; describe the next validation bet. No invented metrics.
@@ -59,7 +59,7 @@ Use this structure, adapting to the evidence. Drop sections that don't apply; ne
 
 ## Diagram rules (Mermaid, GitHub-renderable)
 - Fenced ```mermaid blocks only. No raw styled HTML — GitHub strips it.
-- Colours from the resolved palette. For a categorical set (e.g. the value `timeline`), use a per-diagram `%%{init: {'theme':'base','themeVariables':{...}}}%%` directive with WCAG-safe dark fills + white label text (`cScale0..N` / `cScaleLabel0..N`). For flow/state diagrams, use `classDef` with explicit `fill` / `color` / `stroke`.
+- Colours from the resolved palette. For a categorical set (e.g. the value timeline blocks), use a per-diagram `%%{init: {'theme':'base','themeVariables':{...}}}%%` directive with WCAG-safe dark fills + white label text (`cScale0..N` / `cScaleLabel0..N`). For flow/state diagrams, use `classDef` with explicit `fill` / `color` / `stroke`.
 - Keep labels short; make sure every diagram parses.
 
 ## Voice & integrity (non-negotiable)
@@ -79,3 +79,18 @@ Use this structure, adapting to the evidence. Drop sections that don't apply; ne
 ## Finish
 - Do **not** run the PDF script — this agent produces Markdown only. Mention that a branded PDF can be built with `node .claude/agents/portfolio/build-portfolio-pdf.mjs` (needs `pandoc` + Chrome/Edge).
 - Report: create vs update, sections written/changed, which token source was used, any contradictions found, and the remaining `‹FILL›` placeholders.
+
+## Token economy (binding)
+The portfolio document is long and every read lands in context, so work from anchors, not
+from reading the file.
+- Plan from `grep -n` anchors (headings, phrases to touch). Read at most 25 lines per call;
+  never `cat` the file, never `git diff` it without `--stat`.
+- Apply all edits with one anchored script (each anchor asserted to match exactly once, the
+  file written once). New prose lives only inside the script; never echo it back in a tool
+  result.
+- If a PDF is rebuilt by the caller, it is built once, at the end; check the file timestamp
+  afterwards — a viewer holding the file open makes the build report success without writing.
+- Verify by `pdftotext` + `grep -c` and the page count. One PDF page image at most, and only
+  for a new diagram.
+- Report in six lines or fewer: sections changed, word and page counts, remaining `‹FILL›`
+  placeholders, decisions the owner must make.

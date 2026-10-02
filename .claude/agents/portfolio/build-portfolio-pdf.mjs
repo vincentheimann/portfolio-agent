@@ -255,6 +255,8 @@ pre code{ background:none; padding:0; }
 hr{ border:none; border-top:1px solid var(--line); margin:18px 0; }
 .mermaid{ margin:14px 0; text-align:center; break-inside:avoid; }
 .mermaid svg{ max-width:100%; height:auto; }
+/* a per-diagram theme directive could leave a title white-on-white */
+.mermaid .titleText,.mermaid svg>text{ fill:${t.primary} !important; }
 .mermaid .edgeLabel,.mermaid .edgeLabel p,.mermaid .edgeLabel span,.mermaid .edgeLabel div{ color:${t.text} !important; background:#FFFFFF !important; }
 .mermaid .edgePaths path,.mermaid .flowchart-link,.mermaid .transition,.mermaid .relation{ stroke:${t.line} !important; stroke-width:1.4px !important; }
 .mermaid marker path,.mermaid .arrowheadPath,.mermaid .marker{ fill:${t.line} !important; stroke:${t.line} !important; }

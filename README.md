@@ -12,21 +12,28 @@ project's asset folder. Copy the kit between repos without editing a single file
 ## What's inside
 
 ```
-.claude/agents/portfolio.md    the agent definition
-.claude/agents/portfolio/      docs + the optional Markdown → PDF builder
+.claude/agents/portfolio.md             the agent definition
+.claude/agents/portfolio/               docs + the optional Markdown → PDF builder
+.claude/commands/portfolio-update.md    /portfolio-update — bounded-token incremental updates
 ```
 
 ## Install into your project
 
-Copy both pieces, preserving the paths:
+Copy all three pieces, preserving the paths:
 
 ```bash
-mkdir -p <your-repo>/.claude/agents
-cp    .claude/agents/portfolio.md <your-repo>/.claude/agents/
-cp -r .claude/agents/portfolio    <your-repo>/.claude/agents/portfolio
+mkdir -p <your-repo>/.claude/agents <your-repo>/.claude/commands
+cp    .claude/agents/portfolio.md            <your-repo>/.claude/agents/
+cp -r .claude/agents/portfolio               <your-repo>/.claude/agents/portfolio
+cp    .claude/commands/portfolio-update.md   <your-repo>/.claude/commands/
 ```
 
 Then, in Claude Code inside your project, ask: *"Generate the portfolio for this project."*
+For small follow-up changes, run `/portfolio-update <change list>` — it edits the document and
+rebuilds the PDF under a strict token budget instead of re-running the full agent.
+
+The agent renders the value timeline as **stacked Mermaid `timeline` blocks** (max 4 value bets
+per block) so it stays readable as the project grows, instead of one ever-compressing diagram.
 
 ## Documentation
 

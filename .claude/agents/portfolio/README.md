@@ -8,25 +8,27 @@ Works in any repo. Nothing here is project-specific: per-project settings live i
 config file *in the host repo*, and figures live in the host repo's asset folder. You can copy
 this kit between projects without editing a single file in it.
 
-## What's in the kit (two pieces)
+## What's in the kit (three pieces)
 
 ```
-.claude/agents/portfolio.md    the agent definition  (sibling of this folder)
-.claude/agents/portfolio/      this folder
-├── README.md                  this file
-└── build-portfolio-pdf.mjs    optional Markdown → branded PDF builder
+.claude/agents/portfolio.md             the agent definition  (sibling of this folder)
+.claude/agents/portfolio/               this folder
+├── README.md                           this file
+└── build-portfolio-pdf.mjs             optional Markdown → branded PDF builder
+.claude/commands/portfolio-update.md    /portfolio-update slash command (incremental updates)
 ```
 
 ## Install into a project
 
-Copy **both** pieces into the target repo, preserving the paths:
+Copy **all three** pieces into the target repo, preserving the paths:
 
 ```bash
-cp -r <kit>/.claude/agents/portfolio.md  <your-repo>/.claude/agents/
-cp -r <kit>/.claude/agents/portfolio/    <your-repo>/.claude/agents/portfolio/
+cp -r <kit>/.claude/agents/portfolio.md           <your-repo>/.claude/agents/
+cp -r <kit>/.claude/agents/portfolio/             <your-repo>/.claude/agents/portfolio/
+cp    <kit>/.claude/commands/portfolio-update.md  <your-repo>/.claude/commands/
 ```
 
-That's it. Claude Code discovers the agent automatically.
+That's it. Claude Code discovers the agent and the slash command automatically.
 
 ## Use
 
@@ -53,6 +55,11 @@ That's it. Claude Code discovers the agent automatically.
    | `<!-- pdf-exclude --> … <!-- /pdf-exclude -->` | Region omitted when built with `--strip` |
 
    (Numbered `##` sections — any h2 containing `·` — start on a new page automatically.)
+
+3. **Small follow-up changes** — run `/portfolio-update <change list, one line per change>`
+   in Claude Code. It applies the edits and rebuilds the PDF under a strict token budget
+   (anchored edits, no full-file reads), and hands off to the full agent when the list is
+   longer than ten items or asks for a restructure.
 
 ## Prerequisites (from a fresh machine)
 
@@ -143,7 +150,10 @@ Useful to know if you fork the script; each fixes a real failure mode:
    renders from a temp dir; `pathToFileURL` also encodes spaces in repo paths).
 2. **Mermaid diagrams** (```` ```mermaid ```` fences) render as vector SVG, themed with the
    brand keys; gantt axis text and edge labels carry explicit colors so they never disappear
-   into the background.
+   into the background, and diagram titles are forced to the primary color so a per-diagram
+   theme directive can never leave a title white-on-white. The agent writes the value timeline
+   as **stacked `timeline` blocks** (max 4 value bets per block, numbered "… (n of N)") so it
+   stays readable as the project grows.
 3. **Numbered `##` sections** (any h2 containing `·`) start on a new PDF page.
 4. **Hero vs figures**: the first `<img>` is tagged `class="hero"` and banner-cropped; later
    images keep their aspect ratio, get `break-inside:avoid`, and honor a `width="…"` attribute.
@@ -154,20 +164,22 @@ Useful to know if you fork the script; each fixes a real failure mode:
 
 The full walkthrough, from a repo that has never seen the kit to a shareable branded PDF.
 
-1. **Copy the kit** — both pieces, preserving the paths, into the target repo:
+1. **Copy the kit** — all three pieces, preserving the paths, into the target repo:
 
    ```bash
    # macOS / Linux / Git Bash
-   mkdir -p <your-repo>/.claude/agents
-   cp    <kit>/.claude/agents/portfolio.md <your-repo>/.claude/agents/
-   cp -r <kit>/.claude/agents/portfolio    <your-repo>/.claude/agents/portfolio
+   mkdir -p <your-repo>/.claude/agents <your-repo>/.claude/commands
+   cp    <kit>/.claude/agents/portfolio.md          <your-repo>/.claude/agents/
+   cp -r <kit>/.claude/agents/portfolio             <your-repo>/.claude/agents/portfolio
+   cp    <kit>/.claude/commands/portfolio-update.md <your-repo>/.claude/commands/
    ```
 
    ```powershell
    # Windows PowerShell
-   New-Item -ItemType Directory -Force <your-repo>\.claude\agents
+   New-Item -ItemType Directory -Force <your-repo>\.claude\agents, <your-repo>\.claude\commands
    Copy-Item <kit>\.claude\agents\portfolio.md <your-repo>\.claude\agents\
    Copy-Item -Recurse <kit>\.claude\agents\portfolio <your-repo>\.claude\agents\portfolio
+   Copy-Item <kit>\.claude\commands\portfolio-update.md <your-repo>\.claude\commands\
    ```
 
    Don't copy any `portfolio.tokens.json` from another project — that file is per-project
@@ -207,4 +219,6 @@ The full walkthrough, from a repo that has never seen the kit to a shareable bra
 
 8. **Keep it alive** — after milestones, ask the agent to *"update the portfolio"*; it
    refreshes facts and timeline from the new history while preserving your prose, figures,
-   and filled values. Re-run the build afterwards.
+   and filled values. Re-run the build afterwards. For a handful of targeted changes,
+   `/portfolio-update <change list>` is cheaper: it edits by anchors and rebuilds the PDF
+   in one pass.
