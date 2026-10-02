@@ -113,6 +113,10 @@ Only the first file found is read — the locations are alternatives, never merg
 | `pageSize`      | `A4`                     | Any CSS `@page` size: `Letter`, `Legal`, …                                   |
 | `heroHeight`    | `240`                    | Banner-crop height (px) of the document's first image                        |
 
+The builder also accepts `background` as an alias for `bg` and `font` for `fontFamily`
+(the canonical key wins when both are present), and warns on unrecognized keys instead of
+silently ignoring them.
+
 Minimal example:
 
 ```json
@@ -222,3 +226,15 @@ The full walkthrough, from a repo that has never seen the kit to a shareable bra
    and filled values. Re-run the build afterwards. For a handful of targeted changes,
    `/portfolio-update <change list>` is cheaper: it edits by anchors and rebuilds the PDF
    in one pass.
+
+## Troubleshooting / FAQ
+
+- **How do I change the document title?** Edit the markdown H1 — that is what the PDF
+  shows. The `name: portfolio` in the agent frontmatter is **not** a title: it is the
+  subagent lookup ID, and renaming it breaks both the agent and `/portfolio-update`.
+  Leave it as `portfolio`.
+- **How do I change the output filename?** Set the `pdfFile` key in the tokens config
+  (`.pdf` is appended automatically if missing).
+- **The build says "done" but the PDF didn't change.** A PDF open in a viewer can lock the
+  file, making a rebuild look successful without writing. Close the viewer, check the file's
+  timestamp after the build, and re-run.

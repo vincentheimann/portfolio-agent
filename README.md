@@ -38,7 +38,7 @@ per block) so it stays readable as the project grows, instead of one ever-compre
 ## Documentation
 
 The full guide — prerequisites, configuration reference, figures convention, PDF layout
-markers, and a step-by-step walkthrough — lives in
+markers, a step-by-step walkthrough, and a troubleshooting FAQ — lives in
 **[`.claude/agents/portfolio/README.md`](.claude/agents/portfolio/README.md)**
 (deliberately, so the docs travel with every install).
 

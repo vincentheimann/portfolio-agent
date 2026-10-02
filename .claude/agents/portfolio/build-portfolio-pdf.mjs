@@ -84,9 +84,22 @@ function loadTokens() {
     path.join(repoRoot, '.claude', 'agents', 'portfolio.tokens.json'),
     path.join(repoRoot, 'portfolio.tokens.json'),
   ].filter(Boolean);
+  const ALIASES = { background: 'bg', font: 'fontFamily' }; // intuitive near-misses
   for (const f of files) {
     if (fs.existsSync(f)) {
-      try { return { ...DEFAULT_TOKENS, ...JSON.parse(fs.readFileSync(f, 'utf8')) }; }
+      try {
+        const raw = JSON.parse(fs.readFileSync(f, 'utf8'));
+        for (const [alias, key] of Object.entries(ALIASES)) {
+          if (alias in raw) {
+            if (!(key in raw)) raw[key] = raw[alias];
+            delete raw[alias];
+          }
+        }
+        for (const k of Object.keys(raw)) {
+          if (!(k in DEFAULT_TOKENS)) console.warn(`[portfolio] unrecognized token key ignored: ${k}`);
+        }
+        return { ...DEFAULT_TOKENS, ...raw };
+      }
       catch { console.warn(`[portfolio] ignoring invalid tokens file: ${f}`); }
     }
   }
@@ -115,13 +128,17 @@ const cacheDir = path.join(os.tmpdir(), 'portfolio-cache');
 
 /* ── 1. pull out mermaid fences, leave a comment placeholder ──────────── */
 let md0 = fs.readFileSync(mdPath, 'utf8');
+const EXCLUDE_RE = /<!--\s*pdf-exclude\s*-->[\s\S]*?<!--\s*\/pdf-exclude\s*-->\r?\n?/g;
 if (process.argv.includes('--strip')) {
   let stripped = 0;
-  md0 = md0.replace(/<!--\s*pdf-exclude\s*-->[\s\S]*?<!--\s*\/pdf-exclude\s*-->\r?\n?/g, () => {
+  md0 = md0.replace(EXCLUDE_RE, () => {
     stripped++;
     return '';
   });
   log(`stripped ${stripped} pdf-exclude block(s)`);
+} else {
+  const kept = (md0.match(EXCLUDE_RE) || []).length;
+  if (kept) log(`${kept} pdf-exclude block(s) kept — pass --strip to omit them`);
 }
 const diagrams = [];
 const md = md0.replace(/```mermaid\r?\n([\s\S]*?)```/g, (_m, code) => {
