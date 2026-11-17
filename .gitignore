@@ -3,5 +3,8 @@
 # PORTFOLIO.md would also swallow .claude/agents/portfolio.md — the agent itself)
 /PORTFOLIO.md
 /PORTFOLIO.pdf
+/PORTFOLIO-deck.json
+/PORTFOLIO-deck.html
+/PORTFOLIO-deck.pdf
 /portfolio.tokens.json
 /.claude/agents/portfolio.tokens.json

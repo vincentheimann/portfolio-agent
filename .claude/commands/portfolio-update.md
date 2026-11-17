@@ -14,6 +14,8 @@ a fresh session and apply the token economy below.
 2. **Edit with one anchored script.** Write a single Python script to the scratchpad that
    holds every edit as (old, new) pairs, asserts each anchor matches exactly once, and
    writes the file once. New prose exists only inside that script; never echo it back.
+   If a change touches a fact the **TL;DR** shows (a KPI or a main milestone), update the
+   TL;DR in the same script so the two never disagree.
 3. **Rebuild once**, after all edits:
 
    ```bash

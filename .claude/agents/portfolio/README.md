@@ -2,13 +2,15 @@
 
 A [Claude Code](https://claude.com/claude-code) subagent that turns any project repository into
 a polished **`PORTFOLIO.md` case study** (from the repo's history, docs, and structure), plus an
-optional **zero-dependency PDF builder** that renders it with your brand's colors and fonts.
+optional **zero-dependency PDF builder** that renders it with your brand's colors and fonts,
+and a **slide-deck skill** that presents the project in 8–14 image-first slides (self-contained
+HTML + 16:9 PDF) in the same brand.
 
 Works in any repo. Nothing here is project-specific: per-project settings live in a small JSON
 config file *in the host repo*, and figures live in the host repo's asset folder. You can copy
 this kit between projects without editing a single file in it.
 
-## What's in the kit (three pieces)
+## What's in the kit (four pieces)
 
 ```
 .claude/agents/portfolio.md             the agent definition  (sibling of this folder)
@@ -16,26 +18,31 @@ this kit between projects without editing a single file in it.
 ├── README.md                           this file
 └── build-portfolio-pdf.mjs             optional Markdown → branded PDF builder
 .claude/commands/portfolio-update.md    /portfolio-update slash command (incremental updates)
+.claude/skills/portfolio-deck/          /portfolio-deck skill (slide deck)
+├── SKILL.md                            the skill: story, image choice, slide spec
+└── build-portfolio-deck.mjs            JSON spec → self-contained HTML deck + 16:9 PDF
 ```
 
 ## Install into a project
 
-Copy **all three** pieces into the target repo, preserving the paths:
+Copy **all four** pieces into the target repo, preserving the paths:
 
 ```bash
 cp -r <kit>/.claude/agents/portfolio.md           <your-repo>/.claude/agents/
 cp -r <kit>/.claude/agents/portfolio/             <your-repo>/.claude/agents/portfolio/
 cp    <kit>/.claude/commands/portfolio-update.md  <your-repo>/.claude/commands/
+cp -r <kit>/.claude/skills/portfolio-deck/        <your-repo>/.claude/skills/portfolio-deck/
 ```
 
-That's it. Claude Code discovers the agent and the slash command automatically.
+That's it. Claude Code discovers the agent, the slash command and the skill automatically.
 
 ## Use
 
 1. **Generate / update the case study** — in Claude Code, ask:
    *"Generate the portfolio for this project"* (or use the `portfolio` agent explicitly).
    First run creates `PORTFOLIO.md` at the repo root; later runs update it in place,
-   preserving your hand-written edits and figures.
+   preserving your hand-written edits and figures. The document opens with a **TL;DR** (see
+   below) right after the title and hero image.
 
 2. **Build the PDF** (optional) — from anywhere inside the repo:
 
@@ -54,12 +61,32 @@ That's it. Claude Code discovers the agent and the slash command automatically.
    | `<!-- page-break -->` on its own line | Forces a page break at that point |
    | `<!-- pdf-exclude --> … <!-- /pdf-exclude -->` | Region omitted when built with `--strip` |
 
-   (Numbered `##` sections — any h2 containing `·` — start on a new page automatically.)
+   (Numbered `##` sections — any h2 containing `·` — start on a new page automatically. The
+   unnumbered `## TL;DR` stays on the first page and renders as one callout card.)
 
 3. **Small follow-up changes** — run `/portfolio-update <change list, one line per change>`
    in Claude Code. It applies the edits and rebuilds the PDF under a strict token budget
    (anchored edits, no full-file reads), and hands off to the full agent when the list is
    longer than ten items or asks for a restructure.
+
+4. **Build a slide deck** (optional) — run `/portfolio-deck` in Claude Code (or ask *"make a
+   slide deck of this project"*). See [Slide deck](#slide-deck) below.
+
+## The TL;DR block
+
+Right after the title and hero, the agent writes one block that explains the whole project in
+about 15 seconds, under the heading `## TL;DR` (that exact heading in every language,
+unnumbered, so existing section numbers never shift):
+
+- **Summary**: at most two sentences. What the product is and for whom, the owner's role, the
+  time span, and the current state.
+- **KPIs**: one bold line of 3–5 *sourced* figures (`**212 commits · 9 releases · 3 apps
+  shipped**`). A figure with no source is left out. The TL;DR never shows a `‹FILL›`.
+- **Milestones**: one small Mermaid `timeline` with 4–5 main milestones (6 at most), in the
+  primary colour.
+
+The detailed **At a glance** table stays further down. Updates re-derive the KPIs and
+milestones, and older documents get the TL;DR inserted on their next update.
 
 ## Prerequisites (from a fresh machine)
 
@@ -68,6 +95,10 @@ To generate / update the case study — the agent itself:
 - [Claude Code](https://claude.com/claude-code) (CLI, desktop app, or IDE extension), signed in.
 - `git` on `PATH` — the agent mines commit history for the project timeline; without git the
   case study loses its evidence base. (In practice you already have it: you cloned the repo.)
+
+To build the slide deck: Node.js ≥ 18 and Chrome or Edge, the same as for the PDF but
+**without pandoc**. The deck needs no network; only the Inter webfont falls back to system
+fonts offline.
 
 To build the PDF (optional extra step):
 
@@ -112,10 +143,14 @@ Only the first file found is read — the locations are alternatives, never merg
 | `assetsDir`     | `assets/portfolio`       | Where the project keeps its figures (see below)                              |
 | `pageSize`      | `A4`                     | Any CSS `@page` size: `Letter`, `Legal`, …                                   |
 | `heroHeight`    | `240`                    | Banner-crop height (px) of the document's first image                        |
+| `logo`          | *(none)*                 | Repo-relative logo path (SVG preferred). Deck only: title, closing, footers  |
+| `deckSpec`      | `PORTFOLIO-deck.json`    | The slide-deck spec, the deck's editable source                              |
+| `deckFile`      | `PORTFOLIO-deck.html`    | Output HTML deck (self-contained, images embedded)                           |
+| `deckPdfFile`   | `PORTFOLIO-deck.pdf`     | Output 16:9 deck PDF (one slide per page)                                    |
 
-The builder also accepts `background` as an alias for `bg` and `font` for `fontFamily`
-(the canonical key wins when both are present), and warns on unrecognized keys instead of
-silently ignoring them.
+Both builders read the same file. Each one accepts the other's keys silently, accepts
+`background` as an alias for `bg` and `font` for `fontFamily` (the canonical key wins when
+both are present), and warns on unrecognized keys instead of silently ignoring them.
 
 Minimal example:
 
@@ -163,27 +198,91 @@ Useful to know if you fork the script; each fixes a real failure mode:
    images keep their aspect ratio, get `break-inside:avoid`, and honor a `width="…"` attribute.
 5. The `_italic_` subtitle right under the h1 renders white on the title block (a generic
    `em` rule would otherwise gray it out).
+6. **TL;DR card**: the `## TL;DR` heading and everything up to the next `##` are wrapped in
+   one tinted callout card, kept on one page. Its milestone diagram is capped in height so
+   the card stays on page 1 with the title and hero.
+7. **Temp files**: the HTML and the throwaway browser profile live in a fresh
+   `<os temp>/portfolio-*` folder that the builder removes when it ends, however it ends.
+   Only the Mermaid cache (`<os temp>/portfolio-cache`) is kept between builds.
+
+## Slide deck
+
+The `portfolio-deck` skill presents the project in **8–14 image-first slides** for a
+portfolio showcase (recruiters, peers): what was built, how, and the craft behind it. Run
+`/portfolio-deck` in Claude Code, optionally followed by notes such as a focus, an audience or
+a language. The skill:
+
+1. Distils the story from `PORTFOLIO.md` (TL;DR, At a glance, decisions, timeline, captions).
+   If that file doesn't exist, it reads the repo: README, git history, the manifest.
+2. Picks images that already exist in the repo. `assetsDir` and the portfolio's own figures
+   come first, then screenshots, preview/OG images and diagrams. It never captures or edits
+   images; it suggests the screenshots that would make the deck stronger.
+3. Writes the deck spec (`PORTFOLIO-deck.json`), the editable source. Hand edits survive
+   later runs.
+4. Builds and self-checks with the zero-dependency builder:
+
+   ```bash
+   node .claude/skills/portfolio-deck/build-portfolio-deck.mjs              # HTML + check + PDF
+   node .claude/skills/portfolio-deck/build-portfolio-deck.mjs --inventory  # usable images
+   node .claude/skills/portfolio-deck/build-portfolio-deck.mjs --shot 1,4   # slide PNGs
+   ```
+
+   Options: `--html-only`, `--no-check`. Exit code `0` = clean, `1` = error, `2` = the layout
+   check found issues.
+
+**Layouts:** `title` (brand panel + hero image), `image`, `split` (image + up to 3 bullets),
+`gallery` (2–4 images), `stats` (2–4 big numbers, optionally beside an image), `statement`,
+`timeline` (2–6 milestones) and `closing`. Images can sit in a `browser` frame, a `phone`
+frame or no frame. Use `fit: "cover"` with `position: "top"` to show the fold of a
+full-page capture. Speaker notes go in `notes`. The spec format is documented in
+[`SKILL.md`](../../skills/portfolio-deck/SKILL.md).
+
+**Brand:** colours and font come from the tokens file. Text on filled slides automatically
+uses white or the body text colour, whichever contrasts more. Headings fall back to the text
+colour if the primary is too light to read on white.
+
+**Checks:** before printing, the builder opens every slide in headless Chrome/Edge and reports
+text that overflows its area, images that fail to load, and images that are upscaled enough to
+look blurry. It also warns when slides exceed the text budget, when a slide shows a `‹FILL›`,
+when fewer than half the slides carry an image, and when the PDF page count doesn't match the
+slide count.
+
+**Presenting:** open the HTML file in any browser; it is self-contained, so it can be emailed or
+attached. Controls:
+
+| Key | Action |
+| --- | --- |
+| → / Space / PageDown, or a click | Next slide |
+| ← / PageUp | Previous slide |
+| Home / End | First / last slide |
+| F | Full screen |
+| N | Speaker notes |
+
+Swipe works on touch screens, and `#5` in the URL jumps to slide 5. The PDF has one 16:9 slide
+per page, for sharing or printing.
 
 ## Step by step: use this agent on another project
 
 The full walkthrough, from a repo that has never seen the kit to a shareable branded PDF.
 
-1. **Copy the kit** — all three pieces, preserving the paths, into the target repo:
+1. **Copy the kit** — all four pieces, preserving the paths, into the target repo:
 
    ```bash
    # macOS / Linux / Git Bash
-   mkdir -p <your-repo>/.claude/agents <your-repo>/.claude/commands
+   mkdir -p <your-repo>/.claude/agents <your-repo>/.claude/commands <your-repo>/.claude/skills
    cp    <kit>/.claude/agents/portfolio.md          <your-repo>/.claude/agents/
    cp -r <kit>/.claude/agents/portfolio             <your-repo>/.claude/agents/portfolio
    cp    <kit>/.claude/commands/portfolio-update.md <your-repo>/.claude/commands/
+   cp -r <kit>/.claude/skills/portfolio-deck        <your-repo>/.claude/skills/portfolio-deck
    ```
 
    ```powershell
    # Windows PowerShell
-   New-Item -ItemType Directory -Force <your-repo>\.claude\agents, <your-repo>\.claude\commands
+   New-Item -ItemType Directory -Force <your-repo>\.claude\agents, <your-repo>\.claude\commands, <your-repo>\.claude\skills
    Copy-Item <kit>\.claude\agents\portfolio.md <your-repo>\.claude\agents\
    Copy-Item -Recurse <kit>\.claude\agents\portfolio <your-repo>\.claude\agents\portfolio
    Copy-Item <kit>\.claude\commands\portfolio-update.md <your-repo>\.claude\commands\
+   Copy-Item -Recurse <kit>\.claude\skills\portfolio-deck <your-repo>\.claude\skills\portfolio-deck
    ```
 
    Don't copy any `portfolio.tokens.json` from another project — that file is per-project
@@ -227,6 +326,11 @@ The full walkthrough, from a repo that has never seen the kit to a shareable bra
    `/portfolio-update <change list>` is cheaper: it edits by anchors and rebuilds the PDF
    in one pass.
 
+9. **Present it** (optional) — run `/portfolio-deck`. Fill `assetsDir` with good screenshots
+   first: the deck is only as strong as the screens it can show. Edit `PORTFOLIO-deck.json`
+   to reorder slides or reword them, then rebuild with
+   `node .claude/skills/portfolio-deck/build-portfolio-deck.mjs`.
+
 ## Troubleshooting / FAQ
 
 - **How do I change the document title?** Edit the markdown H1 — that is what the PDF
@@ -235,6 +339,9 @@ The full walkthrough, from a repo that has never seen the kit to a shareable bra
   Leave it as `portfolio`.
 - **How do I change the output filename?** Set the `pdfFile` key in the tokens config
   (`.pdf` is appended automatically if missing).
+- **A deck slide is reported as overflowing.** Shorten that slide's text, or move a bullet to
+  `notes`, or switch to a layout with more room (e.g. `image` instead of `split`), then
+  rebuild. `--shot <n>` shows the slide as a PNG.
 - **The build says "done" but the PDF didn't change.** A PDF open in a viewer can lock the
   file, making a rebuild look successful without writing. Close the viewer, check the file's
   timestamp after the build, and re-run.

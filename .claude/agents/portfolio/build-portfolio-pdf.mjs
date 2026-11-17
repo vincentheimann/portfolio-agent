@@ -62,6 +62,8 @@ const DEFAULT_TOKENS = {
   pageSize: 'A4',
   heroHeight: 240,
 };
+/* keys owned by the slide-deck builder (.claude/skills/portfolio-deck): accepted silently */
+const DECK_KEYS = ['logo', 'deckSpec', 'deckFile', 'deckPdfFile'];
 
 const log = (...a) => console.log('[portfolio]', ...a);
 
@@ -96,7 +98,7 @@ function loadTokens() {
           }
         }
         for (const k of Object.keys(raw)) {
-          if (!(k in DEFAULT_TOKENS)) console.warn(`[portfolio] unrecognized token key ignored: ${k}`);
+          if (!(k in DEFAULT_TOKENS) && !DECK_KEYS.includes(k)) console.warn(`[portfolio] unrecognized token key ignored: ${k}`);
         }
         return { ...DEFAULT_TOKENS, ...raw };
       }
@@ -124,6 +126,11 @@ const { r, g, b } = hexToRgb(t.primary);
 const primaryTint = `rgba(${r},${g},${b},.06)`;
 
 const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'portfolio-'));
+/* the work dir (HTML + throwaway browser profile) is ours: remove it however the run ends */
+process.on('exit', () => {
+  try { fs.rmSync(workDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
+  catch { console.warn(`[portfolio] could not remove the temporary folder ${workDir}`); }
+});
 const cacheDir = path.join(os.tmpdir(), 'portfolio-cache');
 
 /* ── 1. pull out mermaid fences, leave a comment placeholder ──────────── */
@@ -178,6 +185,9 @@ body = body.replace(/(<img\b[^>]*\bsrc=")([^"]+)(")/gi, (m, pre, src, post) => {
 /* ── 3c. the first image is the hero banner; later images render natural ── */
 body = body.replace(/<img\b/, '<img class="hero"');
 
+/* ── 3c'. the TL;DR (unnumbered "## TL;DR" up to the next h2) is one callout card ── */
+body = body.replace(/(<h2\b[^>]*>\s*TL;DR\s*<\/h2>[\s\S]*?)(?=<h2\b|$)/i, '<section class="tldr">$1</section>');
+
 /* ── 3d. manual page breaks: <!-- page-break --> in the markdown ────────── */
 body = body.replace(/<!--\s*page-?break\s*-->/gi, '<div class="page-break"></div>');
 
@@ -230,6 +240,15 @@ h2.section{
   break-before:page; page-break-before:always;
   border-top:3px solid var(--accent); padding-top:14px; margin-top:0;
 }
+.tldr{
+  margin:18px 0 6px; padding:12px 18px 8px; background:var(--primary-tint);
+  border-left:4px solid var(--accent); border-radius:10px; break-inside:avoid;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.tldr h2{ margin:0 0 4px; font-size:12pt; letter-spacing:.06em; text-transform:uppercase; }
+.tldr p{ margin:4px 0; }
+.tldr .mermaid{ margin:6px 0 0; }
+.tldr .mermaid svg{ max-height:190px; }
 h3{ color:var(--primary-dark); font-size:12pt; font-weight:700; margin:18px 0 6px; }
 p{ margin:8px 0; }
 img{
